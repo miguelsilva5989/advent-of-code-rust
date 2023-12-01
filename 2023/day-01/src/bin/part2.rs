@@ -4,7 +4,7 @@ fn main() {
     dbg!(output);
 }
 
-static NUMBER: [&'static str; 9] = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+static NUMBERS: [&'static str; 9] = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
 fn match_num(num: &str) -> Option<char> {
     match num {
@@ -21,57 +21,73 @@ fn match_num(num: &str) -> Option<char> {
     }
 }
 
-fn get_written_number(input_line: &str, current_line_pos: usize) -> Option<char> {
-    let line = &input_line[current_line_pos..];
-
-    for num in NUMBER {
-        if num.len() <= line.len() && &line[..num.len()] == num {
-            return match_num(num);
-        }
-    }
-    None
+#[derive(PartialEq)]
+enum Direction {
+    Normal,
+    Reverse,
 }
 
-fn get_written_number_reverse(input_line: &str, current_line_pos: usize) -> Option<char> {
-    let rev_line = input_line.chars().rev().collect::<String>();
-    let line = &rev_line[current_line_pos..];
+fn find_written_num(line: &str, direction: Direction) -> (usize, &str) {
+    let mut pos = 9999;
+    let mut written_num = "";
+    if direction == Direction::Reverse {
+        pos = 0;
+    }
 
-    for num in NUMBER {
-        if num.len() <= line.len() && &line[..num.len()] == num.chars().rev().collect::<String>() {
-            return match_num(num);
+    for num in NUMBERS {
+        match direction {
+            Direction::Normal => {
+                if let Some(found) = line.find(num) {
+                    if found <= pos {
+                        pos = found;
+                        written_num = num;
+                    }
+                };
+            }
+            Direction::Reverse => {
+                if let Some(found) = line.rfind(num) {
+                    if found > pos {
+                        pos = found;
+                        written_num = num;
+                    }
+                };
+            }
         }
     }
-    None
+    return (pos, written_num);
 }
 
 fn part2(input: &str) -> u32 {
     let mut sum = 0;
 
-    for (idx, line) in input.lines().enumerate() {
+    for line in input.lines() {
+        println!("{line}");
         let mut nums: String = "".to_string();
 
-        for (idx, ch) in line.chars().enumerate() {
-            if ch.is_digit(10) {
-                nums.push(ch);
-                break;
-            }
-            if let Some(written_num) = get_written_number(line, idx) {
-                nums.push(written_num);
-                break;
+        let left_digit = line.find(|c| char::is_digit(c, 10));
+        let right_digit = line.rfind(|c| char::is_digit(c, 10));
+
+        let (left_written_digit, written_num_left) = find_written_num(line, Direction::Normal);
+        let (right_written_digit, written_num_right) = find_written_num(line, Direction::Reverse);
+
+        if left_digit.is_some() && left_digit < Some(left_written_digit) {
+            nums.push(line.chars().nth(left_digit.unwrap()).unwrap());
+        } else {
+            nums.push(match_num(written_num_left).unwrap());
+        }
+
+        if right_digit.is_some() && right_digit > Some(right_written_digit) {
+            nums.push(line.chars().nth(right_digit.unwrap()).unwrap());
+        } else {
+            if let Some(right) = match_num(written_num_right) {
+                nums.push(right)
+            } else {
+                nums.push(line.chars().nth(left_digit.unwrap()).unwrap());
             }
         }
-        for (idx, ch) in line.chars().rev().enumerate() {
-            if ch.is_digit(10) {
-                nums.push(ch);
-                break;
-            }
-            if let Some(written_num) = get_written_number_reverse(line, idx) {
-                nums.push(written_num);
-                break;
-            }
-        }
+
         sum += nums.parse::<u32>().unwrap();
-        println!("input line {idx} - {sum} -- {nums}")
+        // println!("input line {idx} - {sum} -- {nums}");
     }
 
     sum
@@ -85,12 +101,12 @@ mod tests {
     fn part_2() {
         let result = part2(
             "two1nine
-            eightwothree
-            abcone2threexyz
-            xtwone3four
-            4nineeightseven2
-            zoneight234
-            7pqrstsixteen",
+eightwothree
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen",
         );
         assert_eq!(result, 281);
     }
