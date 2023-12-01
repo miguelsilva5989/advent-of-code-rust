@@ -6,20 +6,16 @@ fn main() {
 
 fn part1(input: &str) -> u32 {
     let mut sum = 0;
+
     for line in input.lines() {
         let mut nums: String = "".to_string();
-        for ch in line.chars() {
-            if ch.is_digit(10) {
-                nums.push(ch);
-                break;
-            }
-        }
-        for ch in line.chars().rev() {
-            if ch.is_digit(10) {
-                nums.push(ch);
-                break;
-            }
-        }
+
+        let left = line.find(|c| char::is_digit(c, 10)).unwrap();
+        let right = line.rfind(|c| char::is_digit(c, 10)).unwrap();
+
+        nums.push(line.chars().nth(left).unwrap());
+        nums.push(line.chars().nth(right).unwrap());
+
         sum += nums.parse::<u32>().unwrap();
     }
     sum
