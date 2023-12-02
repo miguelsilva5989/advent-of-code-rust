@@ -26,7 +26,7 @@ struct GameColour {
     num: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct GameSet {
     red: usize,
     green: usize,
@@ -39,7 +39,7 @@ impl GameSet {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Games {
     num: usize,
     game_sets: Vec<GameSet>,
@@ -95,34 +95,27 @@ fn parse_line(input: &str) -> IResult<&str, Games> {
     ))
 }
 
-fn check_cube_sum(games: Games) -> (usize, bool) {
-    let mut game_set_sum = GameSet::new();
-
-    for game_set in games.game_sets {
-        game_set_sum.red += game_set.red;
-        game_set_sum.green += game_set.green;
-        game_set_sum.blue += game_set.blue;
+fn check_cube_sum(games: &Games) -> (bool, usize) {
+    for game_set in &games.game_sets {
+        if game_set.red > 12 || game_set.green > 13 || game_set.blue > 14 {
+            return (false, 0);
+        }
     }
 
-    println!("{:?}", game_set_sum);
-
-    if game_set_sum.red <= 12 && game_set_sum.green <= 13 && game_set_sum.blue <= 14 {
-        return (games.num, true);
-    }
-
-    (0, false)
+    return (true, games.num);
 }
 
 fn part1(input: &str) -> usize {
     let mut game_numbers: usize = 0;
     for line in input.lines() {
         let (_, games) = parse_line(line).unwrap();
-        let (game_num, result) = check_cube_sum(games);
+
+        let (result, game_num) = check_cube_sum(&games);
         if result {
-            game_numbers += game_num
+            println!("adding game: {:?}", games);
+            game_numbers += game_num;
         };
     }
-
     game_numbers
 }
 
