@@ -14,15 +14,8 @@ fn main() {
 }
 
 #[derive(Debug)]
-enum Colour {
-    Red,
-    Green,
-    Blue,
-}
-
-#[derive(Debug)]
 struct GameColour {
-    colour: Colour,
+    colour: String,
     num: usize,
 }
 
@@ -48,17 +41,10 @@ struct Games {
 fn game_nr_colour(input: &str) -> IResult<&str, GameColour> {
     let (input, (_, num, _, colour)) = tuple((multispace0, digit1, multispace0, alt((tag("red"), tag("green"), tag("blue")))))(input)?;
 
-    let colour = match colour {
-        "red" => Colour::Red,
-        "green" => Colour::Green,
-        "blue" => Colour::Blue,
-        _ => todo!(),
-    };
-
     Ok((
         input,
         GameColour {
-            colour,
+            colour: colour.to_owned(),
             num: num.parse::<usize>().unwrap(),
         },
     ))
@@ -70,10 +56,11 @@ fn game_set(input: &str) -> IResult<&str, GameSet> {
     let mut game_set = GameSet::new();
 
     for game_colour in game_colours {
-        match game_colour.colour {
-            Colour::Red => game_set.red = game_colour.num,
-            Colour::Green => game_set.green = game_colour.num,
-            Colour::Blue => game_set.blue = game_colour.num,
+        match game_colour.colour.as_str() {
+            "red" => game_set.red = game_colour.num,
+            "green" => game_set.green = game_colour.num,
+            "blue" => game_set.blue = game_colour.num,
+            _ => panic!("wrong color"),
         }
     }
 
