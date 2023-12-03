@@ -65,8 +65,9 @@ fn part1(input: &str) -> u32 {
     for (i, row) in engine.iter().enumerate() {
         // let mut is_continuous_nr = false;
         for (j, x) in row.iter().enumerate() {
-            if x == &PositionType::Dot {
+            if !matches!(x, PositionType::Digit(_)) {
                 if ongoing_number != "" && is_valid_number {
+                    // println!("adding number {}", ongoing_number);
                     engine_numbers += ongoing_number.parse::<u32>().unwrap();
                 }
                 is_valid_number = false;
