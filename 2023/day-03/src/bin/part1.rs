@@ -11,17 +11,28 @@ enum PositionType {
     Symbol,
 }
 
-fn has_adjacent_symbols(engine: &Vec<Vec<PositionType>>, i: usize, j: usize) -> bool {
-    let rows = engine.len();
-    let cols = engine[0].len();
-    // while i <= rows {
-    //     while j <= cols {}
-    // }
+fn has_adjacent_symbols(
+    engine: &Vec<Vec<PositionType>>,
+    rows_len: usize,
+    cols_len: usize,
+    i: usize,
+    j: usize,
+    ongoing_number: &mut String,
+) -> bool {
+    if let PositionType::Digit(num) = engine[i][j] {
+        ongoing_number.push_str(num.to_string().as_str());
+    }
 
-    for dx in (if i > 0 { -1 } else { 0 })..(if i < rows { 2 } else { 1 }) {
-        for dy in (if j > 0 { -1 } else { 0 })..(if j < cols { 2 } else { 1 }) {
+    for dx in (if i > 0 { i - 1 } else { i })..=(if i < rows_len { i + 1 } else { i }) {
+        for dy in (if j > 0 { j - 1 } else { j })..=(if j < cols_len { j + 1 } else { j }) {
+            if dx == i && dy == j {
+                continue;
+            }
+            // println!("  pos {:?}-{:?}: number {:?}", dx, dy, engine[dx][dy]);
+
             if engine[dx][dy] == PositionType::Symbol {
-                println!("symbol");
+                // println!("      pos {:?}-{:?}    type {:?}", dx, dy, engine[dx][dy]);
+                return true;
             }
         }
     }
@@ -45,20 +56,32 @@ fn part1(input: &str) -> u32 {
         engine.push(row)
     }
 
+    let rows_len = engine.len() - 1;
+    let cols_len = engine[0].len() - 1;
+    let mut ongoing_number = "".to_owned();
+    let mut is_valid_number: bool = false;
     let mut engine_numbers = 0;
-    for (i, row) in engine.iter().enumerate() {
-        let mut is_continuous_nr = false;
-        for (j, x) in row.iter().enumerate() {
-            // if j + 1 <= engine[i].len() && matches!(engine[i][j + 1], PositionType::Digit(_)) {
-            //     is_continuous_nr = true;
-            // }
 
-            println!("{:?}{:?}", i, j);
-            if has_adjacent_symbols(&engine, i, j) {}
+    for (i, row) in engine.iter().enumerate() {
+        // let mut is_continuous_nr = false;
+        for (j, x) in row.iter().enumerate() {
+            if x == &PositionType::Dot {
+                if ongoing_number != "" && is_valid_number {
+                    engine_numbers += ongoing_number.parse::<u32>().unwrap();
+                }
+                is_valid_number = false;
+                ongoing_number = "".to_owned();
+            }
+
+            if matches!(x, PositionType::Digit(_))
+                && has_adjacent_symbols(&engine, rows_len, cols_len, i, j, &mut ongoing_number)
+            {
+                is_valid_number = true;
+            }
         }
     }
 
-    9
+    engine_numbers
 }
 
 #[cfg(test)]
