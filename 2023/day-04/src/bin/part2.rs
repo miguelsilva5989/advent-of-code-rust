@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashSet;
 
 use nom::{
     bytes::complete::tag,
@@ -16,8 +16,6 @@ fn main() {
 
 #[derive(Debug, Clone)]
 struct GameNumbers {
-    card: u32,
-    // copies: u32,
     winning: Vec<u32>,
     full: Vec<u32>,
 }
@@ -30,61 +28,40 @@ fn parse_card(input: &str) -> IResult<&str, (Vec<&str>, Vec<&str>)> {
     )(input)?;
 
     Ok((input, (card_numbers.0, card_numbers.1)))
-
-    // Ok((input))?
 }
 
 fn parse_line(input: &str) -> IResult<&str, GameNumbers> {
-    let (input, (_, _, card_number, _, _, (left, right))) =
-        tuple((tag("Card"), multispace0, digit1, tag(":"), multispace0, parse_card))(input)?;
+    let (input, (_, _, _, _, _, (left, right))) = tuple((tag("Card"), multispace0, digit1, tag(":"), multispace0, parse_card))(input)?;
 
     Ok((
         input,
         GameNumbers {
-            card: card_number.parse::<u32>().unwrap(),
-            // copies: 1,
             winning: left.iter().map(|x| x.parse::<u32>().unwrap()).collect(),
             full: right.iter().map(|x| x.parse::<u32>().unwrap()).collect(),
         },
     ))
 }
 
-fn count_winning_numbers(card: &GameNumbers) -> u32 {
-    let mut winning_sum = 0;
-    for winning in &card.winning {
-        if card.full.contains(&winning) {
-            winning_sum += 1;
-        }
-    }
-    winning_sum
-}
-
 fn part1(input: &str) -> usize {
-    let mut games: Vec<GameNumbers> = vec![];
-    let mut hash: BTreeMap<u32, usize> = BTreeMap::new();
+    let mut played = vec![0; input.lines().count()];
 
-    for line in input.lines() {
-        let bind = line;
+    for (idx, line) in input.lines().enumerate() {
+        played[idx] += 1;
+        let bind = line.clone();
         let line = bind.replace("  ", " ");
         let (_, game_numbers) = parse_line(line.as_str()).unwrap();
-        // println!("{:?}", game_numbers);
-        hash.entry(game_numbers.card).or_insert(1);
-        games.push(game_numbers);
-    }
 
-    for game in games.clone() {
-        // println!("{:?}", game);
-        let winning_number = count_winning_numbers(&game);
-        if winning_number > 0 {
-            for _ in 1..=*hash.get(&game.card).unwrap() {
-                for i in 1..=winning_number {
-                    hash.entry(game.card + i).and_modify(|x| *x += 1).or_insert(1);
-                }
-            }
+        let winning: HashSet<u32> = HashSet::from_iter(game_numbers.winning);
+        let full: HashSet<u32> = HashSet::from_iter(game_numbers.full);
+
+        let winning_nrs: Vec<&u32> = winning.intersection(&full).collect();
+
+        for i in 0..winning_nrs.len() {
+            played[idx + i + 1] += played[idx]
         }
     }
 
-    hash.iter().map(|(_, values)| values).sum::<usize>()
+    played.iter().sum()
 }
 
 #[cfg(test)]
