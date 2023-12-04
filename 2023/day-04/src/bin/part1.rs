@@ -66,7 +66,7 @@ fn part1(input: &str) -> u32 {
         let bind = line.clone();
         let line = bind.replace("  ", " ");
         let (_, game_numbers) = parse_line(line.as_str()).unwrap();
-        println!("{:?}", game_numbers);
+        // println!("{:?}", game_numbers);
 
         winning_sum += get_winning_numbers(game_numbers);
     }
