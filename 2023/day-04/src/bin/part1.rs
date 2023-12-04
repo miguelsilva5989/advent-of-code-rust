@@ -1,8 +1,7 @@
 use nom::{
-    branch::alt,
     bytes::complete::tag,
-    character::complete::{anychar, digit1, multispace0, multispace1},
-    multi::{many1, separated_list1},
+    character::complete::{digit1, multispace0, multispace1},
+    multi::separated_list1,
     sequence::{separated_pair, tuple},
     IResult,
 };
@@ -15,7 +14,7 @@ fn main() {
 
 #[derive(Debug)]
 struct GameNumbers<'a> {
-    card: u32,
+    // card: u32,
     winning: Vec<&'a str>,
     full: Vec<&'a str>,
 }
@@ -33,27 +32,46 @@ fn parse_card(input: &str) -> IResult<&str, (Vec<&str>, Vec<&str>)> {
 }
 
 fn parse_line(input: &str) -> IResult<&str, GameNumbers> {
-    let (input, (_, _, card_number, _, _, (left, right))) =
-        tuple((tag("Card"), multispace0, digit1, tag(":"), multispace0, parse_card))(input)?;
+    let (input, (_, _, _, _, _, (left, right))) = tuple((tag("Card"), multispace0, digit1, tag(":"), multispace0, parse_card))(input)?;
 
     Ok((
         input,
         GameNumbers {
-            card: card_number.parse::<u32>().unwrap(),
+            // card: card_number.parse::<u32>().unwrap(),
             winning: left,
             full: right,
         },
     ))
 }
 
-fn part1(input: &str) -> &str {
+fn get_winning_numbers(card: GameNumbers) -> u32 {
+    let mut winning_sum = 0;
+    for winning in &card.winning {
+        if card.full.contains(&winning) {
+            if winning_sum == 0 {
+                winning_sum += 1;
+            } else {
+                winning_sum *= 2;
+            }
+        }
+    }
+    println!("{}", winning_sum);
+    winning_sum
+}
+
+fn part1(input: &str) -> u32 {
+    let mut winning_sum = 0;
+
     for line in input.lines() {
-        let (_, game_numbers) = parse_line(line).unwrap();
+        let bind = line.clone();
+        let line = bind.replace("  ", " ");
+        let (_, game_numbers) = parse_line(line.as_str()).unwrap();
         println!("{:?}", game_numbers);
-        // println!("{:?}", asd);
+
+        winning_sum += get_winning_numbers(game_numbers);
     }
 
-    ""
+    winning_sum
 }
 
 #[cfg(test)]
@@ -70,6 +88,6 @@ Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
 Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11",
         );
-        assert_eq!(result, "asd");
+        assert_eq!(result, 13);
     }
 }
