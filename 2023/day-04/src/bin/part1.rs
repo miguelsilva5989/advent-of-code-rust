@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use nom::{
     bytes::complete::tag,
     character::complete::{digit1, multispace0, multispace1},
@@ -44,21 +46,6 @@ fn parse_line(input: &str) -> IResult<&str, GameNumbers> {
     ))
 }
 
-fn get_winning_numbers(card: GameNumbers) -> u32 {
-    let mut winning_sum = 0;
-    for winning in &card.winning {
-        if card.full.contains(&winning) {
-            if winning_sum == 0 {
-                winning_sum += 1;
-            } else {
-                winning_sum *= 2;
-            }
-        }
-    }
-    println!("{}", winning_sum);
-    winning_sum
-}
-
 fn part1(input: &str) -> u32 {
     let mut winning_sum = 0;
 
@@ -66,9 +53,15 @@ fn part1(input: &str) -> u32 {
         let bind = line.clone();
         let line = bind.replace("  ", " ");
         let (_, game_numbers) = parse_line(line.as_str()).unwrap();
-        // println!("{:?}", game_numbers);
 
-        winning_sum += get_winning_numbers(game_numbers);
+        let winning: HashSet<u32> = HashSet::from_iter(game_numbers.winning.iter().map(|x| x.parse::<u32>().unwrap()));
+        let full: HashSet<u32> = HashSet::from_iter(game_numbers.full.iter().map(|x| x.parse::<u32>().unwrap()));
+
+        let winning_nrs: Vec<&u32> = winning.intersection(&full).collect();
+
+        if winning_nrs.len() > 0 {
+            winning_sum += u32::pow(2, winning_nrs.len() as u32 - 1);
+        }
     }
 
     winning_sum
