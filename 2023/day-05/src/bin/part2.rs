@@ -1,3 +1,5 @@
+use indicatif::ParallelProgressIterator;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::ops::Range;
 
 fn main() {
@@ -89,20 +91,14 @@ fn part1(input: &str) -> usize {
     println!("{:?}", almanac);
 
     let seeds: Vec<Range<usize>> = almanac.seeds.chunks(2).map(|x| x[0]..(x[0] + x[1])).collect();
-    println!("{:?}", seeds);
+    // println!("{:?}", seeds);
 
-    // seeds
-    //     .iter()
-    //     .flat_map(|range| range.clone().into_iter())
-    //     .map(|seed| println!("{seed}"))
-    //     .min()
-    //     .unwrap();
+    let locations = seeds.iter().flat_map(|range| range.clone().into_iter()).collect::<Vec<usize>>();
+    // println!("{:?}", locations);
 
-    // panic!();
-
-    let min_location = seeds
-        .iter()
-        .flat_map(|range| range.clone().into_iter())
+    let min_location = locations
+        .into_par_iter()
+        .progress()
         .map(|seed| find_location(seed, almanac.map.clone()))
         .min()
         .unwrap();
