@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 fn main() {
     let input = include_str!("./input1.txt");
     let output = part1(input);
@@ -8,8 +6,8 @@ fn main() {
 
 #[derive(Debug)]
 struct Almanac {
-    seeds: Vec<i64>,
-    map: Vec<Vec<Vec<i64>>>,
+    seeds: Vec<usize>,
+    map: Vec<Vec<Vec<usize>>>,
 }
 
 impl Almanac {
@@ -29,8 +27,7 @@ fn parse_almanac(input: String) -> Almanac {
             if map_title.is_alphabetic() {
                 i += 1;
             } else {
-                let digits: Vec<i64> = line.split(" ").into_iter().map(|x| x.parse::<i64>().unwrap()).collect();
-                println!("{} {:?} {:?}", i, digits, almanac);
+                let digits: Vec<usize> = line.split(" ").into_iter().map(|x| x.parse::<usize>().unwrap()).collect();
                 if i == 1 {
                     almanac.seeds = digits;
                 } else {
@@ -46,65 +43,56 @@ fn parse_almanac(input: String) -> Almanac {
     almanac
 }
 
-fn transpose_vec(v: Vec<Vec<i64>>) -> Vec<Vec<i64>> {
+fn transpose_vec(v: Vec<Vec<usize>>) -> Vec<Vec<usize>> {
     assert!(!v.is_empty());
     let len = v[0].len();
     let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
     (0..len)
-        .map(|_| iters.iter_mut().map(|n| n.next().unwrap()).collect::<Vec<i64>>())
+        .map(|_| iters.iter_mut().map(|n| n.next().unwrap()).collect::<Vec<usize>>())
         .collect()
 }
 
-// struct Link {
-//     source: i64,
-//     dest: i64,
-// }
-
-fn find_location(source: i64, maps: Vec<Vec<Vec<i64>>>) {
-    for (i, map) in maps.iter().enumerate() {
-        println!("seed: {}, map {:?}", source, map);
-
-        let transposed = transpose_vec(maps[i].clone());
-        // println!("check seed {} in {:?}", source, transposed);
+fn find_location(seed: usize, maps: Vec<Vec<Vec<usize>>>) -> usize {
+    let location = maps.iter().fold(seed, |source, map| {
+        let transposed = transpose_vec(map.clone());
+        // println!("-> seed {} source {} tranposed {:?}", source, source, transposed);
 
         let mut destination = transposed[1]
             .iter()
             .enumerate()
-            .map(|(idx, seed)| {
-                if (seed..&(seed + &transposed[2][idx])).contains(&&source) {
-                    // println!("  found seed {} between {} {}", source, seed, &(seed + &transposed[2][idx]));
+            .map(|(idx, dest)| {
+                if (dest..&(dest + transposed[2][idx])).contains(&&source) {
+                    // println!("  found source {} between {} {}", source, dest, &(dest + &transposed[2][idx]));
                     // get destination value
-                    let offset = source as usize - (*seed as usize..(seed + &transposed[2][idx]) as usize).start;
-                    // println!("  pos {}", pos);
-                    // println!("  val {}", transposed[0][idx] as usize + pos);
-                    return transposed[0][idx] as usize + offset;
+                    let offset = source - (dest..&(dest + &transposed[2][idx])).start;
+                    return transposed[0][idx] + offset;
                 }
                 return 0;
             })
             .max();
-
         if destination.unwrap() == 0 {
-            destination = Some(source as usize)
+            destination = Some(source)
         };
-        println!("  destination {:?}", destination);
-        continue;
-    }
+        // println!("  - destination {:?}", destination);
+        destination.unwrap()
+    });
 
-    // dest.unwrap() as i64
+    location
 }
 
-fn part1(input: &str) -> i64 {
+fn part1(input: &str) -> usize {
     let input = input.replace("seeds: ", "seeds: \n");
 
     let almanac = parse_almanac(input);
     println!("{:?}", almanac);
 
-    // let mut map: BTreeMap<i64, Link> = BTreeMap::new();
-    for seed in almanac.seeds {
-        find_location(seed, almanac.map.clone())
-    }
-
-    0
+    let min_location = almanac
+        .seeds
+        .iter()
+        .map(|seed| find_location(*seed, almanac.map.clone()))
+        .min()
+        .unwrap();
+    min_location
 }
 
 #[cfg(test)]
