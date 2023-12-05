@@ -8,50 +8,37 @@ fn main() {
 
 #[derive(Debug)]
 struct Almanac {
-    seeds: Vec<u32>,
-    seed_soil: Vec<Vec<u32>>,
-    soil_to_fertilizer: Vec<Vec<u32>>,
-    fertilizer_to_water: Vec<Vec<u32>>,
-    water_to_light: Vec<Vec<u32>>,
-    light_to_temperature: Vec<Vec<u32>>,
-    temperature_to_humidity: Vec<Vec<u32>>,
-    humidity_to_location: Vec<Vec<u32>>,
+    seeds: Vec<i64>,
+    map: Vec<Vec<Vec<i64>>>,
 }
 
 impl Almanac {
     fn new() -> Self {
         Almanac {
             seeds: vec![],
-            seed_soil: vec![],
-            soil_to_fertilizer: vec![],
-            fertilizer_to_water: vec![],
-            water_to_light: vec![],
-            light_to_temperature: vec![],
-            temperature_to_humidity: vec![],
-            humidity_to_location: vec![],
+            map: vec![vec![]],
         }
     }
 }
 
 fn parse_almanac(input: String) -> Almanac {
     let mut almanac: Almanac = Almanac::new();
-    let mut i = -1;
+    let mut i = 0;
     for line in input.lines() {
         if let Some(map_title) = line.chars().nth(0) {
             if map_title.is_alphabetic() {
                 i += 1;
             } else {
-                let digits: Vec<u32> = line.split(" ").into_iter().map(|x| x.parse::<u32>().unwrap()).collect();
-                match i {
-                    0 => almanac.seeds = digits,
-                    1 => almanac.seed_soil.push(digits),
-                    2 => almanac.soil_to_fertilizer.push(digits),
-                    3 => almanac.fertilizer_to_water.push(digits),
-                    4 => almanac.water_to_light.push(digits),
-                    5 => almanac.light_to_temperature.push(digits),
-                    6 => almanac.temperature_to_humidity.push(digits),
-                    7 => almanac.humidity_to_location.push(digits),
-                    _ => todo!(),
+                let digits: Vec<i64> = line.split(" ").into_iter().map(|x| x.parse::<i64>().unwrap()).collect();
+                println!("{} {:?} {:?}", i, digits, almanac);
+                if i == 1 {
+                    almanac.seeds = digits;
+                } else {
+                    if almanac.map.len() <= i - 2 {
+                        almanac.map.push(vec![digits]);
+                    } else {
+                        almanac.map[i - 2].push(digits);
+                    }
                 }
             }
         }
@@ -59,53 +46,62 @@ fn parse_almanac(input: String) -> Almanac {
     almanac
 }
 
-fn transpose_vec(v: Vec<Vec<u32>>) -> Vec<Vec<u32>> {
+fn transpose_vec(v: Vec<Vec<i64>>) -> Vec<Vec<i64>> {
     assert!(!v.is_empty());
     let len = v[0].len();
     let mut iters: Vec<_> = v.into_iter().map(|n| n.into_iter()).collect();
     (0..len)
-        .map(|_| iters.iter_mut().map(|n| n.next().unwrap()).collect::<Vec<u32>>())
+        .map(|_| iters.iter_mut().map(|n| n.next().unwrap()).collect::<Vec<i64>>())
         .collect()
 }
 
-struct Link {
-    source: u32,
-    dest: u32,
+// struct Link {
+//     source: i64,
+//     dest: i64,
+// }
+
+fn find_location(source: i64, maps: Vec<Vec<Vec<i64>>>) {
+    for (i, map) in maps.iter().enumerate() {
+        println!("seed: {}, map {:?}", source, map);
+
+        let transposed = transpose_vec(maps[i].clone());
+        // println!("check seed {} in {:?}", source, transposed);
+
+        let mut destination = transposed[1]
+            .iter()
+            .enumerate()
+            .map(|(idx, seed)| {
+                if (seed..&(seed + &transposed[2][idx])).contains(&&source) {
+                    // println!("  found seed {} between {} {}", source, seed, &(seed + &transposed[2][idx]));
+                    // get destination value
+                    let offset = source as usize - (*seed as usize..(seed + &transposed[2][idx]) as usize).start;
+                    // println!("  pos {}", pos);
+                    // println!("  val {}", transposed[0][idx] as usize + pos);
+                    return transposed[0][idx] as usize + offset;
+                }
+                return 0;
+            })
+            .max();
+
+        if destination.unwrap() == 0 {
+            destination = Some(source as usize)
+        };
+        println!("  destination {:?}", destination);
+        continue;
+    }
+
+    // dest.unwrap() as i64
 }
 
-fn find_location(source: u32, dest: Vec<Vec<u32>>) {
-    let transposed = transpose_vec(dest);
-    println!("check seed {} in {:?}", source, transposed);
-
-    let dest = transposed[1]
-        .iter()
-        .enumerate()
-        .map(|(idx, x)| {
-            if (x..&(x + &transposed[2][idx])).contains(&&source) {
-                println!("  found seed {} between {} {}", source, x, &(x + &transposed[2][idx]));
-                // get destination value
-                let pos = (*x as usize..(x + &transposed[2][idx]) as usize)
-                    .position(|x| x == source as usize)
-                    .unwrap();
-                // println!("  pos {}", pos);
-                // println!("  val {}", transposed[0][idx] as usize + pos);
-                return transposed[0][idx] as usize + pos;
-            }
-            return 0;
-        })
-        .min();
-    println!("dest {:?}", dest)
-}
-
-fn part1(input: &str) -> u32 {
+fn part1(input: &str) -> i64 {
     let input = input.replace("seeds: ", "seeds: \n");
 
     let almanac = parse_almanac(input);
     println!("{:?}", almanac);
 
-    let mut map: BTreeMap<u32, Link> = BTreeMap::new();
+    // let mut map: BTreeMap<i64, Link> = BTreeMap::new();
     for seed in almanac.seeds {
-        find_location(seed, almanac.seed_soil.clone())
+        find_location(seed, almanac.map.clone())
     }
 
     0
